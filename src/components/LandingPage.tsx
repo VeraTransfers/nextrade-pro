@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { MARKETS, Asset } from '../utils/marketData';
+import { MARKETS } from '../utils/marketData';
+import { Asset } from '../types';
 import { Chart } from './Chart';
 import { formatCurrency } from '../utils/constants';
 

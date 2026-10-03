@@ -92,7 +92,7 @@ export const Login: React.FC<LoginProps> = ({ initialIsRegister = false, onBack 
           </button>
         )}
 
-        <h1 className="brand-title">NexTrade Pro</h1>
+        <h1 className="brand-title">CapitalTrade</h1>
         
         <form onSubmit={handleSubmit} className="login-form">
           {isRegister && (

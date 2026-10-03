@@ -8,6 +8,7 @@ export const MARKETS: Asset[] = [
   { id: 'ETH', symbol: 'ETH', name: 'Ethereum', category: 'CRYPTO', currentPrice: 3400, change24h: 2.1 },
   { id: 'GOLD', symbol: 'XAU', name: 'Gold', category: 'GOLD', currentPrice: 2050, change24h: 0.5 },
   { id: 'OIL', symbol: 'WTI', name: 'Crude Oil', category: 'OIL', currentPrice: 82.30, change24h: -1.1 },
+  { id: 'COFFEE', symbol: 'KC', name: 'Coffee C', category: 'COFFEE', currentPrice: 195.40, change24h: 2.8 },
 ];
 
 export const getAsset = (id: string): Asset | undefined => MARKETS.find(a => a.id === id);

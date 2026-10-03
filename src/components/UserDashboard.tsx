@@ -11,6 +11,7 @@ export const UserDashboard: React.FC = () => {
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<string>(MARKETS[0].id);
 
   if (!currentUser) return null;
   const account = state.accounts[currentUser.id];
@@ -40,7 +41,7 @@ export const UserDashboard: React.FC = () => {
       <DashboardSummary />
       
       <div className="dashboard-grid mt-4">
-        <TradePanel />
+        <TradePanel selectedAssetId={selectedAsset} onAssetSelect={setSelectedAsset} />
         <div className="side-panels">
           <div className="card glass-panel mb-4">
             <h2>Retiros de Fondos Internos</h2>
@@ -75,11 +76,14 @@ export const UserDashboard: React.FC = () => {
             <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: '1rem' }}>
               Instrumentos habilitados en la plataforma.
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
               {MARKETS.map(asset => (
-                <div key={asset.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>
-                  <strong>{asset.symbol}</strong>
-                  <span style={{ color: 'var(--text-muted)' }}>{asset.name}</span>
+                <div key={asset.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.8rem', background: selectedAsset === asset.id ? 'rgba(0, 242, 254, 0.15)' : 'rgba(255,255,255,0.03)', borderRadius: '8px', border: selectedAsset === asset.id ? '1px solid var(--cyan)' : '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0, 242, 254, 0.1)'; e.currentTarget.style.borderColor = 'var(--cyan)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = selectedAsset === asset.id ? 'rgba(0, 242, 254, 0.15)' : 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = selectedAsset === asset.id ? 'var(--cyan)' : 'rgba(255,255,255,0.05)'; }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <strong style={{ color: 'var(--cyan)', fontSize: '1.1rem' }}>{asset.symbol}</strong>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{asset.name}</span>
+                  </div>
+                  <button className="btn btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }} onClick={() => { setSelectedAsset(asset.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Operar</button>
                 </div>
               ))}
             </div>

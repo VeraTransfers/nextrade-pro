@@ -449,9 +449,39 @@ body {
   flex-direction: column;
   position: relative;
   overflow: hidden;
-  background: radial-gradient(circle at top right, rgba(0, 242, 254, 0.05), transparent 40%),
-              radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.05), transparent 40%),
-              var(--bg-dark);
+  background-color: #0b0f19;
+}
+
+.interactive-bg {
+  position: fixed;
+  top: -5%;
+  left: -5%;
+  width: 110%;
+  height: 110%;
+  background-image: 
+    linear-gradient(rgba(11, 15, 25, 0.8), rgba(11, 15, 25, 0.95)),
+    url('/trading-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+  transition: transform 0.05s linear;
+  pointer-events: none;
+  /* Add a slow breathing animation that combines with the parallax */
+  animation: bgBreathe 20s ease-in-out infinite alternate;
+}
+
+@keyframes bgBreathe {
+  0% { filter: brightness(1) contrast(1); }
+  100% { filter: brightness(1.2) contrast(1.1); }
+}
+
+.app-content {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
 
 /* Decorative geometric background grid */
@@ -463,11 +493,42 @@ body {
   width: 100%;
   height: 100%;
   background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 30px 30px;
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
   z-index: -1;
   pointer-events: none;
+}
+
+/* Modal CSS for Landing Page */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(11, 15, 25, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999 !important;
+}
+
+.modal-content {
+  position: relative;
+  animation: modalPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes modalPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .btn-back {
@@ -480,13 +541,14 @@ body {
   margin-bottom: 1.5rem;
   text-align: left;
   display: inline-block;
-  transition: color 0.2s, opacity 0.2s;
+  transition: color 0.2s, opacity 0.2s, transform 0.2s;
   opacity: 0.9;
 }
 
 .btn-back:hover {
   opacity: 1;
   text-decoration: underline;
+  transform: translateX(-4px);
 }
 
 /* Landing Page Styles */
@@ -494,51 +556,53 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem 1rem;
+  padding: 3rem 1rem;
   width: 100%;
   min-height: 100vh;
 }
 
 .landing-content {
-  max-width: 1000px;
+  max-width: 1100px;
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 3rem;
+  gap: 4rem;
 }
 
 .hero-section {
-  padding: 4rem 2rem;
+  padding: 6rem 2rem;
   text-align: center;
   position: relative;
   overflow: hidden;
-}
-
-.hero-badge {
-  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.6));
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .hero-title {
-  font-size: 3.5rem;
-  font-weight: 800;
-  color: var(--cyan);
-  margin-bottom: 1rem;
-  letter-spacing: -1px;
+  font-size: 4.5rem;
+  font-weight: 900;
+  background: linear-gradient(to right, #00f2fe, #4facfe, #00f2fe);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 1.5rem;
+  letter-spacing: -2px;
+  animation: shine 5s linear infinite;
+}
+
+@keyframes shine {
+  to {
+    background-position: 200% center;
+  }
 }
 
 .hero-subtitle {
-  font-size: 1.5rem;
-  font-weight: 400;
+  font-size: 1.6rem;
+  font-weight: 300;
   color: var(--text-main);
-  margin-bottom: 1.5rem;
-}
-
-.hero-description {
-  font-size: 1.1rem;
-  color: var(--text-muted);
-  max-width: 600px;
-  margin: 0 auto 2.5rem;
-  line-height: 1.6;
+  margin-bottom: 2.5rem;
 }
 
 .hero-actions {
@@ -549,114 +613,178 @@ body {
 }
 
 .hero-actions .btn {
-  min-width: 180px;
+  min-width: 200px;
+  padding: 1.2rem 2.5rem;
+  font-size: 1.1rem;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 
-.test-funds-warning {
-  display: inline-block;
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  color: #fcd34d;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
+.btn-primary {
+  background: linear-gradient(45deg, #00f2fe, #4facfe);
+  border: none;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 8px 25px rgba(0, 242, 254, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
 }
 
 .markets-section {
-  padding: 1rem 0;
+  padding: 2rem 0;
 }
 
 .section-title {
-  font-size: 1.8rem;
-  margin-bottom: 2rem;
+  font-size: 2.2rem;
+  margin-bottom: 2.5rem;
   text-align: center;
+  font-weight: 700;
   color: var(--text-main);
 }
 
 .market-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 2rem;
 }
 
 .market-card {
-  padding: 1.5rem;
+  padding: 2rem;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  transition: transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(30, 41, 59, 0.5);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.market-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .market-card:hover {
-  transform: translateY(-4px);
-  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-10px) scale(1.02);
+  background: rgba(30, 41, 59, 0.8);
   border-color: var(--cyan);
+  box-shadow: 0 15px 30px rgba(0, 242, 254, 0.15);
+}
+
+.market-card:hover::before {
+  opacity: 1;
 }
 
 .market-icon {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
 }
 
 .market-card h4 {
-  font-size: 1.2rem;
-  margin-bottom: 0.5rem;
-  color: var(--cyan);
-}
-
-.market-card p {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  margin-bottom: 1.5rem;
-  flex: 1;
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+  color: var(--text-main);
+  font-weight: 600;
 }
 
 .market-symbols {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.8rem;
   flex-wrap: wrap;
   justify-content: center;
+  margin-bottom: 1.5rem;
 }
 
 .symbol-badge {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  background: rgba(0, 242, 254, 0.1);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--cyan);
+  border: 1px solid rgba(0, 242, 254, 0.2);
+}
+
+.market-action-btn {
+  margin-top: auto;
+  padding: 0.75rem 1.5rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
   color: var(--text-main);
+  font-weight: 600;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.market-card:hover .market-action-btn {
+  background: var(--cyan);
+  color: #000;
+  border-color: var(--cyan);
 }
 
 .capabilities-section {
-  padding: 3rem;
-  margin-bottom: 3rem;
+  padding: 4rem;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.4));
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .capabilities-list {
   list-style: none;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .capabilities-list li {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  font-size: 1rem;
-  color: var(--text-muted);
-  background: rgba(0,0,0,0.2);
-  padding: 1rem;
-  border-radius: 8px;
+  gap: 1rem;
+  font-size: 1.1rem;
+  color: var(--text-main);
+  background: rgba(0,0,0,0.3);
+  padding: 1.2rem;
+  border-radius: 12px;
+  border-left: 4px solid var(--cyan);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.capabilities-list li:hover {
+  transform: translateX(5px);
+  background: rgba(0, 242, 254, 0.05);
 }
 
 @media (max-width: 768px) {
-  .hero-title { font-size: 2.5rem; }
+  .hero-title { font-size: 3rem; }
   .hero-subtitle { font-size: 1.2rem; }
   .hero-actions { flex-direction: column; width: 100%; max-width: 300px; margin: 0 auto 2rem; }
-  .capabilities-section { padding: 1.5rem; }
+  .capabilities-section { padding: 2rem; }
   .capabilities-list { grid-template-columns: 1fr; }
   .landing-container { padding-bottom: 80px; }
+  .market-grid { grid-template-columns: 1fr; }
 }

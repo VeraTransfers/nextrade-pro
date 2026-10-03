@@ -25,7 +25,7 @@ export interface Asset {
   id: string;
   symbol: string;
   name: string;
-  category: 'STOCKS' | 'CRYPTO' | 'GOLD' | 'OIL';
+  category: 'STOCKS' | 'CRYPTO' | 'GOLD' | 'OIL' | 'COFFEE';
   currentPrice: number;
   change24h: number;
 }

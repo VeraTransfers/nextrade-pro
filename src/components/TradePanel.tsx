@@ -1,15 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useFinancial } from '../context/FinancialContext';
 import { MARKETS, getAsset } from '../utils/marketData';
 import { formatCurrency } from '../utils/constants';
+import { Chart } from './Chart';
 
-export const TradePanel: React.FC = () => {
+interface TradePanelProps {
+  selectedAssetId?: string;
+  onAssetSelect?: (id: string) => void;
+}
+
+export const TradePanel: React.FC<TradePanelProps> = ({ selectedAssetId, onAssetSelect }) => {
   const { currentUser, state, buyAsset, sellAsset } = useFinancial();
-  const [selectedAsset, setSelectedAsset] = useState(MARKETS[0].id);
+  const [localSelectedAsset, setLocalSelectedAsset] = useState(MARKETS[0].id);
+  const selectedAsset = selectedAssetId || localSelectedAsset;
   const [quantity, setQuantity] = useState(1);
   const [isBuying, setIsBuying] = useState(false);
   const [isSelling, setIsSelling] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Generate real-looking random data for the chart based on the asset
+  const [chartData, setChartData] = useState<{day: string, value: number}[]>([]);
+  
+  useEffect(() => {
+    const assetObj = getAsset(selectedAsset);
+    if (!assetObj) return;
+    
+    const basePrice = assetObj.currentPrice;
+    const volatility = assetObj.category === 'CRYPTO' ? 0.05 : 0.015;
+    const newData = [];
+    let currentVal = basePrice * (1 - volatility * 3);
+    
+    for (let i = 24; i >= 0; i--) {
+      const change = currentVal * (Math.random() * volatility * 2 - volatility);
+      currentVal += change;
+      newData.push({
+        day: `${i}h ago`,
+        value: Number(currentVal.toFixed(2))
+      });
+    }
+    // ensure last point is exactly current price
+    newData[newData.length - 1].value = basePrice;
+    newData[newData.length - 1].day = 'Now';
+    
+    setChartData(newData);
+  }, [selectedAsset]);
 
   if (!currentUser) return null;
   
@@ -32,7 +66,8 @@ export const TradePanel: React.FC = () => {
             className="form-control" 
             value={selectedAsset} 
             onChange={(e) => {
-              setSelectedAsset(e.target.value);
+              if (onAssetSelect) onAssetSelect(e.target.value);
+              else setLocalSelectedAsset(e.target.value);
               setErrorMsg(null);
             }}
           >
@@ -40,6 +75,11 @@ export const TradePanel: React.FC = () => {
               <option key={a.id} value={a.id}>{a.name} ({a.symbol}) - {formatCurrency(a.currentPrice)}</option>
             ))}
           </select>
+        </div>
+        
+        <div className="chart-wrapper mt-4 mb-4" style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px' }}>
+          <h4 style={{ marginBottom: '1rem', color: 'var(--text-muted)' }}>Gráfico en tiempo real - 24h</h4>
+          <Chart data={chartData} />
         </div>
         
         <div className="trade-info mt-4">

@@ -60,11 +60,15 @@ export const MarketExplorer: React.FC<MarketExplorerProps> = ({ category, onNavi
     return map[cat.toLowerCase()] || 'Información del mercado no disponible.';
   };
 
+  // Derive Max/Min from current chart data (simplification for visualization)
+  const maxPrice = chartData.length > 0 ? Math.max(...chartData.map(d => d.value)) : selectedAsset?.currentPrice || 0;
+  const minPrice = chartData.length > 0 ? Math.min(...chartData.map(d => d.value)) : selectedAsset?.currentPrice || 0;
+
   if (!selectedAsset) {
     return (
-      <div className="landing-container">
-        <div style={{ marginTop: '5rem', textAlign: 'center' }}>
-          <h2>Categoría no encontrada</h2>
+      <div className="dashboard-container">
+        <div className="card glass-panel text-center" style={{ marginTop: '5rem', padding: '3rem' }}>
+          <h2 className="text-danger">Categoría no encontrada</h2>
           <button className="btn btn-secondary mt-4" onClick={() => onNavigate('landing')}>Volver a inicio</button>
         </div>
       </div>
@@ -72,64 +76,82 @@ export const MarketExplorer: React.FC<MarketExplorerProps> = ({ category, onNavi
   }
 
   return (
-    <div className="landing-container">
-      <div className="landing-content" style={{ marginTop: '2rem' }}>
+    <div className="dashboard-container" style={{ padding: '0 1rem' }}>
+      
+      {/* Header & Breadcrumb */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.5rem 0' }}>
+        <button className="btn-back" onClick={() => onNavigate('landing')} style={{ marginBottom: 0, opacity: 0.7 }}>
+          &larr; VOLVER
+        </button>
+        <span style={{ color: 'var(--text-muted)' }}>/</span>
+        <span style={{ fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>MERCADOS</span>
+        <span style={{ color: 'var(--text-muted)' }}>/</span>
+        <span style={{ fontWeight: 700, color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '1px' }}>{getCategoryName(category)}</span>
+      </div>
+
+      <div className="dashboard-grid" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         
-        {/* Navigation Breadcrumb */}
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '2rem' }}>
-          <button className="btn-back" onClick={() => onNavigate('landing')} style={{ marginBottom: 0 }}>
-            &larr; Volver a Mercados
-          </button>
-          <span style={{ color: 'var(--text-muted)' }}>/</span>
-          <h2 style={{ margin: 0 }}>{getCategoryName(category)}</h2>
-        </div>
-
-        {/* Asset Selector Tabs */}
-        {assetsInCategory.length > 1 && (
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
-            {assetsInCategory.map(asset => (
-              <button 
-                key={asset.id}
-                className={`btn ${selectedAssetId === asset.id ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setSelectedAssetId(asset.id)}
-                style={{ whiteSpace: 'nowrap' }}
-              >
-                {asset.symbol}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="card glass-panel" style={{ padding: '2rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '2rem' }}>
+        {/* Main Terminal Area */}
+        <div className="card glass-panel" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          
+          {/* Top Info Bar */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '2rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '1.5rem' }}>
             <div>
-              <h1 style={{ margin: 0, color: 'var(--text-main)', fontSize: '2.5rem' }}>
-                {selectedAsset.name} <span style={{ color: 'var(--cyan)' }}>— {selectedAsset.symbol}</span>
-              </h1>
-              <div style={{ marginTop: '1.5rem' }}>
-                <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '1rem' }}>Precio actual</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <strong style={{ fontSize: '3rem', color: 'var(--text-main)' }}>{formatCurrency(selectedAsset.currentPrice)}</strong>
-                  <span style={{ padding: '0.5rem 1rem', background: selectedAsset.change24h >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: selectedAsset.change24h >= 0 ? 'var(--green)' : 'var(--red)', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem' }}>
-                    {selectedAsset.change24h >= 0 ? '↑' : '↓'} {selectedAsset.change24h}%
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '1rem', marginBottom: '0.5rem' }}>
+                <h1 style={{ margin: 0, fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-1px' }}>{selectedAsset.name}</h1>
+                <span className="badge" style={{ background: 'rgba(255,255,255,0.1)', color: 'var(--text-muted)', fontSize: '1rem' }}>{selectedAsset.symbol}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginTop: '0.5rem' }}>
+                <span className="metric-lg" style={{ fontSize: '3.5rem', lineHeight: 1 }}>{formatCurrency(selectedAsset.currentPrice)}</span>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '1.5rem', fontWeight: 700, color: selectedAsset.change24h >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                    {selectedAsset.change24h >= 0 ? '+' : ''}{selectedAsset.change24h}%
                   </span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Variación (24H)</span>
                 </div>
               </div>
             </div>
 
-            {/* Range Selector */}
-            <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '0.25rem' }}>
+            {/* Asset Selector Tabs */}
+            {assetsInCategory.length > 1 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignSelf: 'center' }}>
+                {assetsInCategory.map(asset => (
+                  <button 
+                    key={asset.id}
+                    onClick={() => setSelectedAssetId(asset.id)}
+                    style={{ 
+                      background: selectedAssetId === asset.id ? 'rgba(14, 165, 233, 0.1)' : 'rgba(255,255,255,0.02)',
+                      border: `1px solid ${selectedAssetId === asset.id ? 'var(--cyan)' : 'rgba(255,255,255,0.1)'}`,
+                      color: selectedAssetId === asset.id ? 'var(--cyan)' : 'var(--text-muted)',
+                      padding: '0.5rem 1.5rem',
+                      borderRadius: '4px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {asset.symbol}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Chart Controls */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', background: 'rgba(0,0,0,0.4)', borderRadius: '4px', padding: '0.2rem', border: '1px solid rgba(255,255,255,0.05)' }}>
               {(['1D', '1W', '1M'] as const).map(r => (
                 <button 
                   key={r}
                   onClick={() => setRange(r)}
                   style={{
-                    background: range === r ? 'var(--cyan)' : 'transparent',
-                    color: range === r ? '#000' : 'var(--text-muted)',
+                    background: range === r ? 'var(--secondary)' : 'transparent',
+                    color: range === r ? 'var(--text-main)' : 'var(--text-muted)',
                     border: 'none',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '6px',
-                    fontWeight: 'bold',
+                    padding: '0.4rem 1rem',
+                    borderRadius: '3px',
+                    fontWeight: 600,
+                    fontSize: '0.85rem',
                     cursor: 'pointer',
                     transition: 'all 0.2s'
                   }}
@@ -140,32 +162,56 @@ export const MarketExplorer: React.FC<MarketExplorerProps> = ({ category, onNavi
             </div>
           </div>
 
-          <div style={{ height: '400px', margin: '2rem -15px 0 -15px' }}>
+          {/* Chart Area */}
+          <div style={{ height: '450px', background: 'rgba(0,0,0,0.15)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.02)', padding: '1rem', marginLeft: '-1rem', marginRight: '-1rem' }}>
             <Chart data={chartData} />
+          </div>
+
+          {/* Metrics Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem 1.5rem', borderRadius: '6px', borderLeft: '3px solid var(--cyan)' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textTransform: 'uppercase', marginBottom: '0.25rem', fontWeight: 600 }}>Precio Actual</p>
+              <p style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>{formatCurrency(selectedAsset.currentPrice)}</p>
+            </div>
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem 1.5rem', borderRadius: '6px', borderLeft: `3px solid ${selectedAsset.change24h >= 0 ? 'var(--green)' : 'var(--red)'}` }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textTransform: 'uppercase', marginBottom: '0.25rem', fontWeight: 600 }}>Variación</p>
+              <p style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, color: selectedAsset.change24h >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                {selectedAsset.change24h >= 0 ? '+' : ''}{selectedAsset.change24h}%
+              </p>
+            </div>
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem 1.5rem', borderRadius: '6px', borderLeft: '3px solid rgba(255,255,255,0.2)' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textTransform: 'uppercase', marginBottom: '0.25rem', fontWeight: 600 }}>Máximo ({range})</p>
+              <p style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>{formatCurrency(maxPrice)}</p>
+            </div>
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem 1.5rem', borderRadius: '6px', borderLeft: '3px solid rgba(255,255,255,0.2)' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textTransform: 'uppercase', marginBottom: '0.25rem', fontWeight: 600 }}>Mínimo ({range})</p>
+              <p style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>{formatCurrency(minPrice)}</p>
+            </div>
           </div>
         </div>
 
-        {/* Information Section */}
-        <div className="card glass-panel" style={{ padding: '2rem' }}>
-          <h3 style={{ color: 'var(--text-main)' }}>Información del mercado</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', lineHeight: 1.6, marginTop: '1rem' }}>
-            {getCategoryInfo(category)}
-          </p>
-        </div>
+        {/* Info & CTA Split */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
+          <div className="card glass-panel" style={{ padding: '2rem' }}>
+            <h3 style={{ color: 'var(--cyan)', marginBottom: '1rem', textTransform: 'uppercase', fontSize: '0.9rem', letterSpacing: '1px' }}>Información del activo</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: 1.6, margin: 0 }}>
+              {getCategoryInfo(category)}
+            </p>
+          </div>
 
-        {/* CTA Section */}
-        <div className="card glass-panel" style={{ padding: '3rem 2rem', textAlign: 'center', background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(0,0,0,0.2))' }}>
-          <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>¿Quieres probar una operación?</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem', marginBottom: '2rem' }}>
-            Crea tu cuenta y explora las operaciones disponibles en CapitalTrade Pro.
-          </p>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button className="btn btn-primary btn-large" onClick={() => onNavigate('register')} style={{ maxWidth: '300px' }}>
-              Comenzar a Invertir
-            </button>
-            <button className="btn btn-secondary btn-large" onClick={() => onNavigate('login')} style={{ maxWidth: '200px' }}>
-              Iniciar sesión
-            </button>
+          <div className="card glass-panel" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'linear-gradient(to right, rgba(14, 165, 233, 0.05), rgba(0,0,0,0.2))' }}>
+            <h3 style={{ marginBottom: '0.5rem', fontSize: '1.3rem' }}>Ejecutar Operación</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.5rem' }}>
+              Inicia sesión o crea una cuenta para operar con {selectedAsset.symbol} en tiempo real.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <button className="btn btn-primary" onClick={() => onNavigate('register')} style={{ flex: 2, minWidth: '200px' }}>
+                Comenzar a Invertir
+              </button>
+              <button className="btn btn-secondary" onClick={() => onNavigate('login')} style={{ flex: 1, minWidth: '150px' }}>
+                Iniciar sesión
+              </button>
+            </div>
           </div>
         </div>
 

@@ -46,7 +46,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                   <span key={m.id} className="symbol-badge">{m.symbol}</span>
                 ))}
               </div>
-              <button className="market-action-btn" onClick={() => onNavigate('/markets/stocks')}>Explorar Mercado</button>
+              <a href="/markets/stocks" className="market-action-btn" style={{display: 'block', textAlign: 'center', textDecoration: 'none'}} onClick={(e) => { e.preventDefault(); onNavigate('/markets/stocks'); }}>Explorar Mercado</a>
             </div>
             
             <div className="market-card glass-panel">
@@ -57,7 +57,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                   <span key={m.id} className="symbol-badge">{m.symbol}</span>
                 ))}
               </div>
-              <button className="market-action-btn" onClick={() => onNavigate('/markets/crypto')}>Explorar Mercado</button>
+              <a href="/markets/crypto" className="market-action-btn" style={{display: 'block', textAlign: 'center', textDecoration: 'none'}} onClick={(e) => { e.preventDefault(); onNavigate('/markets/crypto'); }}>Explorar Mercado</a>
             </div>
 
             <div className="market-card glass-panel">
@@ -68,7 +68,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                   <span key={m.id} className="symbol-badge">{m.symbol}</span>
                 ))}
               </div>
-              <button className="market-action-btn" onClick={() => onNavigate('/markets/gold')}>Explorar Mercado</button>
+              <a href="/markets/gold" className="market-action-btn" style={{display: 'block', textAlign: 'center', textDecoration: 'none'}} onClick={(e) => { e.preventDefault(); onNavigate('/markets/gold'); }}>Explorar Mercado</a>
             </div>
 
             <div className="market-card glass-panel">
@@ -79,7 +79,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                   <span key={m.id} className="symbol-badge">{m.symbol}</span>
                 ))}
               </div>
-              <button className="market-action-btn" onClick={() => onNavigate('/markets/oil')}>Explorar Mercado</button>
+              <a href="/markets/oil" className="market-action-btn" style={{display: 'block', textAlign: 'center', textDecoration: 'none'}} onClick={(e) => { e.preventDefault(); onNavigate('/markets/oil'); }}>Explorar Mercado</a>
             </div>
 
             <div className="market-card glass-panel">
@@ -90,7 +90,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                   <span key={m.id} className="symbol-badge">{m.symbol}</span>
                 ))}
               </div>
-              <button className="market-action-btn" onClick={() => onNavigate('/markets/coffee')}>Explorar Mercado</button>
+              <a href="/markets/coffee" className="market-action-btn" style={{display: 'block', textAlign: 'center', textDecoration: 'none'}} onClick={(e) => { e.preventDefault(); onNavigate('/markets/coffee'); }}>Explorar Mercado</a>
             </div>
           </div>
         </div>

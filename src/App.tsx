@@ -4,11 +4,25 @@ import { Login } from './components/Login';
 import { AdminDashboard } from './components/AdminDashboard';
 import { UserDashboard } from './components/UserDashboard';
 import { LandingPage } from './components/LandingPage';
+import { MarketExplorer } from './components/MarketExplorer';
 
 function App() {
   const { currentUser, setCurrentUser } = useFinancial();
-  const [view, setView] = useState<'landing' | 'login' | 'register'>('landing');
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const bgRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigate = (path: string) => {
+    window.history.pushState({}, '', path);
+    setCurrentPath(path);
+  };
 
   useEffect(() => {
     let animationFrameId: number;
@@ -36,8 +50,21 @@ function App() {
 
   const renderContent = () => {
     if (!currentUser) {
-      if (view === 'landing') return <LandingPage onNavigate={setView} />;
-      return <Login initialIsRegister={view === 'register'} onBack={() => setView('landing')} />;
+      if (currentPath === '/login') return <Login initialIsRegister={false} onBack={() => navigate('/')} />;
+      if (currentPath === '/register') return <Login initialIsRegister={true} onBack={() => navigate('/')} />;
+      if (currentPath.startsWith('/markets/')) {
+        const category = currentPath.split('/markets/')[1];
+        return <MarketExplorer category={category} onNavigate={(view) => {
+          if (view === 'login') navigate('/login');
+          else if (view === 'register') navigate('/register');
+          else navigate('/');
+        }} />;
+      }
+      return <LandingPage onNavigate={(view) => {
+        if (view === 'login') navigate('/login');
+        else if (view === 'register') navigate('/register');
+        else if (view.startsWith('/markets/')) navigate(view);
+      }} />;
     }
     
     return (

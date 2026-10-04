@@ -720,6 +720,7 @@ h3, .h3 { font-size: 1.25rem; font-weight: 600; color: var(--text-main); margin-
   background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
+  pointer-events: none;
 }
 
 .market-card:hover {
@@ -774,6 +775,9 @@ h3, .h3 { font-size: 1.25rem; font-weight: 600; color: var(--text-main); margin-
   font-weight: 600;
   transition: all 0.3s ease;
   width: 100%;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .market-card:hover .market-action-btn {

@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useFinancial } from '../context/FinancialContext';
-import { MARKETS, getAsset } from '../utils/marketData';
+import { useMarketData } from '../context/MarketContext';
 import { formatCurrency } from '../utils/constants';
 import { Chart } from './Chart';
 
@@ -11,53 +11,133 @@ interface TradePanelProps {
 
 export const TradePanel: React.FC<TradePanelProps> = ({ selectedAssetId, onAssetSelect }) => {
   const { currentUser, state, buyAsset, sellAsset } = useFinancial();
-  const [localSelectedAsset, setLocalSelectedAsset] = useState(MARKETS[0].id);
-  const selectedAsset = selectedAssetId || localSelectedAsset;
-  const [quantity, setQuantity] = useState(1);
-  const [isBuying, setIsBuying] = useState(false);
-  const [isSelling, setIsSelling] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  // Generate real-looking random data for the chart based on the asset
-  const [chartData, setChartData] = useState<{day: string, value: number}[]>([]);
+  const { marketData } = useMarketData();
+  const availableAssets = Object.values(marketData.assets);
   
-  useEffect(() => {
-    const assetObj = getAsset(selectedAsset);
-    if (!assetObj) return;
-    
-    const basePrice = assetObj.currentPrice;
-    const volatility = assetObj.category === 'CRYPTO' ? 0.05 : 0.015;
-    const newData = [];
-    let currentVal = basePrice * (1 - volatility * 3);
-    
-    for (let i = 24; i >= 0; i--) {
-      const change = currentVal * (Math.random() * volatility * 2 - volatility);
-      currentVal += change;
-      newData.push({
-        day: `${i}h ago`,
-        value: Number(currentVal.toFixed(2))
-      });
-    }
-    // ensure last point is exactly current price
-    newData[newData.length - 1].value = basePrice;
-    newData[newData.length - 1].day = 'Now';
-    
-    setChartData(newData);
-  }, [selectedAsset]);
+  const [localSelectedAsset, setLocalSelectedAsset] = useState(availableAssets[0]?.id || 'AAPL');
+  const selectedAsset = selectedAssetId || localSelectedAsset;
+  
+  // quantity string to avoid weird 0 behavior when backspacing
+  const [quantityStr, setQuantityStr] = useState('1');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  
+  // Confirmation state
+  const [confirmTrade, setConfirmTrade] = useState<{type: 'BUY' | 'SELL', qty: number, price: number, total: number} | null>(null);
 
   if (!currentUser) return null;
   
   const account = state.accounts[currentUser.id];
   const portfolio = state.portfolios[currentUser.id] || [];
   const pos = portfolio.find(p => p.assetId === selectedAsset);
-  const asset = getAsset(selectedAsset);
+  const asset = marketData.assets[selectedAsset];
+  const chartData = marketData.history[selectedAsset] || [];
 
   if (!asset || !account) return null;
 
-  const cost = quantity * asset.currentPrice;
+  const quantity = parseFloat(quantityStr);
+  const isValidQuantity = !isNaN(quantity) && quantity > 0 && isFinite(quantity);
+  const cost = isValidQuantity ? quantity * asset.currentPrice : 0;
+
+  const handlePreSubmit = (type: 'BUY' | 'SELL') => {
+    setErrorMsg(null);
+    if (!isValidQuantity) {
+      setErrorMsg('Por favor, ingresa una cantidad válida mayor a 0.');
+      return;
+    }
+    
+    if (type === 'BUY') {
+      if (cost > account.balance) {
+        setErrorMsg('Saldo insuficiente para realizar esta compra.');
+        return;
+      }
+    } else {
+      if (!pos || pos.quantity < quantity) {
+        setErrorMsg('No tienes suficientes unidades para realizar esta venta.');
+        return;
+      }
+    }
+
+    setConfirmTrade({
+      type,
+      qty: quantity,
+      price: asset.currentPrice,
+      total: cost
+    });
+  };
+
+  const executeTrade = async () => {
+    if (!confirmTrade) return;
+    setIsProcessing(true);
+    setErrorMsg(null);
+    
+    try {
+      if (confirmTrade.type === 'BUY') {
+        await buyAsset(currentUser.id, selectedAsset, confirmTrade.qty, confirmTrade.price);
+      } else {
+        await sellAsset(currentUser.id, selectedAsset, confirmTrade.qty, confirmTrade.price);
+      }
+      // Reset form
+      setQuantityStr('1');
+      setConfirmTrade(null);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Ocurrió un error al procesar la operación.');
+    } finally {
+      setIsProcessing(false);
+      setConfirmTrade(null);
+    }
+  };
 
   return (
-    <div className="card glass-panel">
+    <div className="card glass-panel" style={{ position: 'relative' }}>
+      {confirmTrade && (
+        <div className="modal-overlay" style={{ position: 'absolute', borderRadius: '8px' }}>
+          <div className="modal-content" style={{ maxWidth: '400px', width: '90%', padding: '1.5rem', margin: 'auto' }}>
+            <h3 style={{ marginTop: 0, color: 'var(--cyan)' }}>Confirmar Operación</h3>
+            <p style={{ margin: '1rem 0' }}>Estás a punto de <strong>{confirmTrade.type === 'BUY' ? 'COMPRAR' : 'VENDER'}</strong>:</p>
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Activo</span>
+                <strong>{asset.name} ({asset.symbol})</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Cantidad</span>
+                <strong>{confirmTrade.qty}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Precio</span>
+                <strong>{formatCurrency(confirmTrade.price)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Total Estimado</span>
+                <strong style={{ fontSize: '1.2rem', color: confirmTrade.type === 'BUY' ? 'var(--red)' : 'var(--green)' }}>
+                  {confirmTrade.type === 'BUY' ? '-' : '+'}{formatCurrency(confirmTrade.total)}
+                </strong>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button 
+                className="btn btn-secondary" 
+                style={{ flex: 1 }} 
+                onClick={() => setConfirmTrade(null)}
+                disabled={isProcessing}
+              >
+                Cancelar
+              </button>
+              <button 
+                className={`btn ${confirmTrade.type === 'BUY' ? 'btn-success' : 'btn-danger'}`} 
+                style={{ flex: 1 }} 
+                onClick={executeTrade}
+                disabled={isProcessing}
+              >
+                {isProcessing ? 'Procesando...' : 'Confirmar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <h2>Mercados y Operaciones</h2>
       <div className="trade-grid">
         <div className="asset-selector">
@@ -71,22 +151,24 @@ export const TradePanel: React.FC<TradePanelProps> = ({ selectedAssetId, onAsset
               setErrorMsg(null);
             }}
           >
-            {MARKETS.map(a => (
+            {availableAssets.map(a => (
               <option key={a.id} value={a.id}>{a.name} ({a.symbol}) - {formatCurrency(a.currentPrice)}</option>
             ))}
           </select>
         </div>
         
         <div className="chart-wrapper mt-4 mb-4" style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px' }}>
-          <h4 style={{ marginBottom: '1rem', color: 'var(--text-muted)' }}>Gráfico en tiempo real - 24h</h4>
+          <h4 style={{ marginBottom: '1rem', color: 'var(--text-muted)' }}>Rendimiento - 24h</h4>
           <Chart data={chartData} />
         </div>
         
         <div className="trade-info mt-4">
-          <p>Precio Actual: <strong>{formatCurrency(asset.currentPrice)}</strong></p>
-          <p>Variación 24h: <strong className={asset.change24h >= 0 ? 'text-green' : 'text-danger'}>{asset.change24h}%</strong></p>
-          <p>Posees: <strong>{pos ? pos.quantity : 0} unidades</strong></p>
-          <p>Saldo Disponible: <strong>{formatCurrency(account.balance)}</strong></p>
+          <p>Precio Actual: <strong style={{ fontSize: '1.2rem' }}>{formatCurrency(asset.currentPrice)}</strong></p>
+          <p>Variación 24h: <strong className={asset.change24h >= 0 ? 'text-green' : 'text-danger'}>{asset.change24h >= 0 ? '↑' : '↓'} {asset.change24h}%</strong></p>
+          <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
+            <p>Saldo Disponible: <strong style={{ color: 'var(--cyan)' }}>{formatCurrency(account.balance)}</strong></p>
+            <p>Unidades en Cartera: <strong>{pos ? pos.quantity : 0}</strong></p>
+          </div>
         </div>
 
         <div className="trade-actions mt-4">
@@ -95,46 +177,27 @@ export const TradePanel: React.FC<TradePanelProps> = ({ selectedAssetId, onAsset
             <input 
               type="number" 
               className="form-control" 
-              value={quantity} 
-              onChange={e => setQuantity(Number(e.target.value))} 
+              value={quantityStr} 
+              onChange={e => setQuantityStr(e.target.value)} 
               min="0.01" step="0.01"
+              placeholder="0.00"
             />
           </div>
-          <p className="mt-4">Total: <strong>{formatCurrency(cost)}</strong></p>
+          <p className="mt-4" style={{ fontSize: '1.1rem' }}>Valor Estimado: <strong>{formatCurrency(cost)}</strong></p>
           <div className="button-grid mt-4">
             <button 
               className="btn btn-success" 
-              onClick={async () => {
-                setErrorMsg(null);
-                setIsBuying(true);
-                try {
-                  await buyAsset(currentUser.id, selectedAsset, quantity);
-                } catch (err: any) {
-                  setErrorMsg(err.message || 'Error al comprar');
-                } finally {
-                  setIsBuying(false);
-                }
-              }}
-              disabled={isBuying || isSelling || cost > account.balance || quantity <= 0}
+              onClick={() => handlePreSubmit('BUY')}
+              disabled={isProcessing || confirmTrade !== null || !isValidQuantity || cost > account.balance}
             >
-              {isBuying ? 'Procesando...' : 'Comprar'}
+              Comprar
             </button>
             <button 
               className="btn btn-danger" 
-              onClick={async () => {
-                setErrorMsg(null);
-                setIsSelling(true);
-                try {
-                  await sellAsset(currentUser.id, selectedAsset, quantity);
-                } catch (err: any) {
-                  setErrorMsg(err.message || 'Error al vender');
-                } finally {
-                  setIsSelling(false);
-                }
-              }}
-              disabled={isBuying || isSelling || !pos || pos.quantity < quantity || quantity <= 0}
+              onClick={() => handlePreSubmit('SELL')}
+              disabled={isProcessing || confirmTrade !== null || !isValidQuantity || !pos || pos.quantity < quantity}
             >
-              {isSelling ? 'Procesando...' : 'Vender'}
+              Vender
             </button>
           </div>
         </div>

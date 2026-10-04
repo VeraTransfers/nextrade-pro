@@ -17,8 +17,8 @@ interface FinancialContextType {
   remoteAccount: any | null;
 
   // User Actions
-  buyAsset: (userId: string, assetId: string, quantity: number) => Promise<void>;
-  sellAsset: (userId: string, assetId: string, quantity: number) => Promise<void>;
+  buyAsset: (userId: string, assetId: string, quantity: number, price: number) => Promise<void>;
+  sellAsset: (userId: string, assetId: string, quantity: number, price: number) => Promise<void>;
   requestWithdrawal: (userId: string, amount: number) => Promise<void>;
   // Admin Actions
   addCapital: (userId: string, amount: number) => Promise<void>;
@@ -187,16 +187,17 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
     return tx;
   };
 
-  const buyAsset = async (userId: string, assetId: string, quantity: number) => {
+  const buyAsset = async (userId: string, assetId: string, quantity: number, price: number) => {
     if (currentUser?.id !== userId && currentUser?.role !== 'ADMIN') throw new Error('No autorizado');
     const asset = getAsset(assetId);
     if (!asset || quantity <= 0) throw new Error('Activo inválido o cantidad <= 0');
+    if (price <= 0 || isNaN(price)) throw new Error('Precio inválido');
     
     const { data, error } = await supabase.rpc('execute_buy', {
       p_symbol: asset.symbol,
       p_asset_type: asset.category,
       p_quantity: quantity,
-      p_price: asset.currentPrice
+      p_price: price
     });
 
     if (error) {
@@ -207,15 +208,16 @@ export const FinancialProvider: React.FC<{ children: ReactNode }> = ({ children 
     await refreshFinancialData(userId);
   };
 
-  const sellAsset = async (userId: string, assetId: string, quantity: number) => {
+  const sellAsset = async (userId: string, assetId: string, quantity: number, price: number) => {
     if (currentUser?.id !== userId && currentUser?.role !== 'ADMIN') throw new Error('No autorizado');
     const asset = getAsset(assetId);
     if (!asset || quantity <= 0) throw new Error('Activo inválido o cantidad <= 0');
+    if (price <= 0 || isNaN(price)) throw new Error('Precio inválido');
     
     const { data, error } = await supabase.rpc('execute_sell', {
       p_symbol: asset.symbol,
       p_quantity: quantity,
-      p_price: asset.currentPrice
+      p_price: price
     });
 
     if (error) {

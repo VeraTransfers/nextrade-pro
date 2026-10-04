@@ -5,30 +5,43 @@ import { PortfolioPanel } from './PortfolioPanel';
 import { HistoryPanel } from './HistoryPanel';
 import { useFinancial } from '../context/FinancialContext';
 import { MARKETS } from '../utils/marketData';
+import { formatCurrency } from '../utils/constants';
 
 export const UserDashboard: React.FC = () => {
   const { currentUser, state, requestWithdrawal } = useFinancial();
-  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [withdrawAmountStr, setWithdrawAmountStr] = useState('');
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<string>(MARKETS[0].id);
+  const [confirmWithdrawal, setConfirmWithdrawal] = useState<number | null>(null);
 
   if (!currentUser) return null;
   const account = state.accounts[currentUser.id];
 
-  const handleWithdraw = async () => {
+  const withdrawAmount = parseFloat(withdrawAmountStr);
+  const isValidWithdrawal = !isNaN(withdrawAmount) && withdrawAmount > 0 && isFinite(withdrawAmount);
+
+  const handlePreSubmit = () => {
     setErrorMsg(null);
-    const amt = parseFloat(withdrawAmount);
-    if (isNaN(amt) || amt <= 0) {
-      setErrorMsg('Monto inválido');
+    if (!isValidWithdrawal) {
+      setErrorMsg('Por favor ingresa un monto válido mayor a 0.');
       return;
     }
+    if (withdrawAmount > account.balance) {
+      setErrorMsg('Fondos insuficientes para realizar el retiro.');
+      return;
+    }
+    setConfirmWithdrawal(withdrawAmount);
+  };
 
+  const executeWithdraw = async () => {
+    if (!confirmWithdrawal) return;
+    setErrorMsg(null);
     setIsWithdrawing(true);
     try {
-      await requestWithdrawal(currentUser.id, amt);
-      setWithdrawAmount('');
-      alert('Solicitud de retiro enviada');
+      await requestWithdrawal(currentUser.id, confirmWithdrawal);
+      setWithdrawAmountStr('');
+      setConfirmWithdrawal(null);
     } catch (err: any) {
       setErrorMsg(err.message || 'Error al procesar el retiro');
     } finally {
@@ -37,7 +50,52 @@ export const UserDashboard: React.FC = () => {
   };
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container" style={{ position: 'relative' }}>
+      
+      {confirmWithdrawal !== null && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1000 }}>
+          <div className="modal-content" style={{ maxWidth: '400px', width: '90%', padding: '1.5rem', margin: 'auto', background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <h3 style={{ marginTop: 0, color: 'var(--cyan)' }}>Confirmar Retiro</h3>
+            <p style={{ margin: '1rem 0' }}>Estás a punto de solicitar un retiro de fondos hacia tu cuenta verificada.</p>
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Monto a retirar</span>
+                <strong>{formatCurrency(confirmWithdrawal)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Saldo Disponible</span>
+                <strong>{formatCurrency(account.balance)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Saldo Restante</span>
+                <strong style={{ fontSize: '1.2rem', color: 'var(--cyan)' }}>
+                  {formatCurrency(account.balance - confirmWithdrawal)}
+                </strong>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button 
+                className="btn btn-secondary" 
+                style={{ flex: 1 }} 
+                onClick={() => setConfirmWithdrawal(null)}
+                disabled={isWithdrawing}
+              >
+                Cancelar
+              </button>
+              <button 
+                className="btn btn-primary" 
+                style={{ flex: 1 }} 
+                onClick={executeWithdraw}
+                disabled={isWithdrawing}
+              >
+                {isWithdrawing ? 'Procesando...' : 'Confirmar Retiro'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <DashboardSummary />
       
       <div className="dashboard-grid mt-4">
@@ -53,19 +111,20 @@ export const UserDashboard: React.FC = () => {
                 <input 
                   type="number" 
                   className="form-control mb-4" 
-                  value={withdrawAmount} 
+                  value={withdrawAmountStr} 
                   onChange={e => {
-                    setWithdrawAmount(e.target.value);
+                    setWithdrawAmountStr(e.target.value);
                     setErrorMsg(null);
                   }} 
                   placeholder="Cantidad a retirar"
+                  min="0.01" step="0.01"
                 />
                 <button 
                   className="btn btn-primary full-width" 
-                  onClick={handleWithdraw}
-                  disabled={isWithdrawing || !withdrawAmount || parseFloat(withdrawAmount) <= 0}
+                  onClick={handlePreSubmit}
+                  disabled={isWithdrawing || !isValidWithdrawal || withdrawAmount > account.balance}
                 >
-                  {isWithdrawing ? 'Procesando...' : 'Solicitar Retiro'}
+                  Solicitar Retiro
                 </button>
               </div>
             )}

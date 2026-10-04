@@ -70,6 +70,8 @@ export const AdminDashboard: React.FC = () => {
       return;
     }
     
+    if (!window.confirm(`¿Estás seguro de que deseas acreditar ${formatCurrency(amt)} al usuario seleccionado?`)) return;
+
     setIsCrediting(true);
     try {
       await addCapital(selectedUser, amt);
@@ -95,6 +97,8 @@ export const AdminDashboard: React.FC = () => {
       return;
     }
 
+    if (!window.confirm(`¿Estás seguro de que deseas registrar una ${adjustType === 'PROFIT' ? 'ganancia' : 'pérdida'} de ${formatCurrency(amount)} por concepto de "${adjustConcept}"?`)) return;
+
     setIsAdjusting(true);
     try {
       await adjustAccount(selectedUser, adjustType, amount, adjustConcept);
@@ -111,6 +115,7 @@ export const AdminDashboard: React.FC = () => {
 
   const handleApprove = async (withdrawalId: string) => {
     setErrorMsg(null);
+    if (!window.confirm('¿Aprobar esta solicitud de retiro? Los fondos serán descontados permanentemente del saldo.')) return;
     setIsApprovingWithdrawal(withdrawalId);
     try {
       await updateWithdrawalStatus(withdrawalId, 'APPROVED');
@@ -212,7 +217,11 @@ export const AdminDashboard: React.FC = () => {
               <p>Estado de Retiros: <strong>{account.blockWithdrawals ? 'BLOQUEADO' : 'PERMITIDO'}</strong></p>
               <button 
                 className={`btn ${account.blockWithdrawals ? 'btn-success' : 'btn-danger'} full-width mt-4`}
-                onClick={() => toggleWithdrawalBlock(selectedUser, !account.blockWithdrawals)}
+                onClick={() => {
+                  if (window.confirm(`¿Estás seguro de que deseas ${account.blockWithdrawals ? 'PERMITIR' : 'BLOQUEAR'} los retiros para este usuario?`)) {
+                    toggleWithdrawalBlock(selectedUser, !account.blockWithdrawals);
+                  }
+                }}
               >
                 {account.blockWithdrawals ? 'Permitir Retiros' : 'Bloquear Retiros'}
               </button>
@@ -251,8 +260,12 @@ export const AdminDashboard: React.FC = () => {
           
           <div className="card glass-panel border-danger">
             <h3>Peligro</h3>
-            <p className="text-muted">Restablece toda la base de datos de prueba (Elimina todas las transacciones, usuarios extra y portafolios).</p>
-            <button className="btn btn-danger full-width mt-4" onClick={resetState}>Factory Reset</button>
+            <p className="text-muted">Restablece toda la base de datos (Elimina todas las transacciones, usuarios extra y portafolios).</p>
+            <button className="btn btn-danger full-width mt-4" onClick={() => {
+              if (window.confirm('¿ESTÁS SEGURO? Esta acción es irreversible y eliminará todos los datos.')) {
+                resetState();
+              }
+            }}>Factory Reset</button>
           </div>
         </div>
       )}

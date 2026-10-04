@@ -1,10 +1,12 @@
 import React from 'react';
 import { useFinancial } from '../context/FinancialContext';
-import { getAsset } from '../utils/marketData';
+import { useMarketData } from '../context/MarketContext';
 import { formatCurrency } from '../utils/constants';
 
 export const PortfolioPanel: React.FC = () => {
   const { currentUser, state } = useFinancial();
+  const { marketData } = useMarketData();
+  
   if (!currentUser) return null;
 
   const portfolio = state.portfolios[currentUser.id] || [];
@@ -30,7 +32,7 @@ export const PortfolioPanel: React.FC = () => {
             </thead>
             <tbody>
               {portfolio.map(pos => {
-                const asset = getAsset(pos.assetId);
+                const asset = marketData.assets[pos.assetId];
                 if (!asset) return null;
                 const currentValue = pos.quantity * asset.currentPrice;
                 const pl = currentValue - pos.investedAmount;
